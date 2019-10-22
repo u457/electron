@@ -28,6 +28,14 @@ Show the given file in a file manager. If possible, select the file.
 
 * `fullPath` String
 
+Returns `Promise<String>` - Resolves with description corresponding to the error if the operation failed, or empty string if the operation succeeded.
+
+Open the given file in the desktop's default manner.
+
+### `shell.openItemSync(fullPath)`
+
+* `fullPath` String
+
 Returns `Boolean` - Whether the item was successfully opened.
 
 Open the given file in the desktop's default manner.

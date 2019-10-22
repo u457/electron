@@ -30,6 +30,7 @@
 #include "base/win/scoped_com_initializer.h"
 #include "base/win/windows_version.h"
 #include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
 #include "ui/base/win/shell.h"
 #include "url/gurl.h"
 
@@ -306,6 +307,19 @@ void ShowItemInFolderOnWorkerThread(const base::FilePath& full_path) {
   }
 }
 
+std::string OpenItemOnThread(const base::FilePath& full_path) {
+  // May result in an interactive dialog.
+  base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
+                                                base::BlockingType::MAY_BLOCK);
+  bool success;
+  if (base::DirectoryExists(full_path))
+    success = ui::win::OpenFolderViaShell(full_path);
+  else
+    success = ui::win::OpenFileViaShell(full_path);
+
+  return success ? "" : "Failed to open item.";
+}
+
 }  // namespace
 
 namespace platform_util {
@@ -317,16 +331,24 @@ void ShowItemInFolder(const base::FilePath& full_path) {
                  base::BindOnce(&ShowItemInFolderOnWorkerThread, full_path));
 }
 
-bool OpenItem(const base::FilePath& full_path) {
-  if (base::DirectoryExists(full_path))
-    return ui::win::OpenFolderViaShell(full_path);
-  else
-    return ui::win::OpenFileViaShell(full_path);
+void OpenItem(const base::FilePath& full_path, OpenCallback callback) {
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+  base::PostTaskAndReplyWithResult(
+      base::CreateCOMSTATaskRunner({base::ThreadPool(), base::MayBlock(),
+                                    base::TaskPriority::USER_BLOCKING})
+          .get(),
+      FROM_HERE, base::BindOnce(&OpenItemOnThread, full_path),
+      std::move(callback));
+}
+
+bool OpenItemSync(const base::FilePath& full_path) {
+  return OpenItemOnThread(full_path).empty();
 }
 
 void OpenExternal(const GURL& url,
                   const OpenExternalOptions& options,
-                  OpenExternalCallback callback) {
+                  OpenCallback callback) {
   base::PostTaskAndReplyWithResult(
       base::CreateCOMSTATaskRunner({base::ThreadPool(), base::MayBlock(),
                                     base::TaskPriority::USER_BLOCKING})

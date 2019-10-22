@@ -45,8 +45,8 @@ struct Converter<base::win::ShortcutOperation> {
 
 namespace {
 
-void OnOpenExternalFinished(electron::util::Promise<void*> promise,
-                            const std::string& error) {
+void OnOpenFinished(electron::util::Promise<void*> promise,
+                    const std::string& error) {
   if (error.empty())
     promise.Resolve();
   else
@@ -67,8 +67,17 @@ v8::Local<v8::Promise> OpenExternal(const GURL& url, gin::Arguments* args) {
   }
 
   platform_util::OpenExternal(
-      url, options,
-      base::BindOnce(&OnOpenExternalFinished, std::move(promise)));
+      url, options, base::BindOnce(&OnOpenFinished, std::move(promise)));
+  return handle;
+}
+
+v8::Local<v8::Promise> OpenItem(const base::FilePath& full_path,
+                                gin::Arguments* args) {
+  electron::util::Promise<void*> promise(args->isolate());
+  v8::Local<v8::Promise> handle = promise.GetHandle();
+
+  platform_util::OpenItem(full_path,
+                          base::BindOnce(&OnOpenFinished, std::move(promise)));
   return handle;
 }
 
@@ -143,7 +152,7 @@ void Initialize(v8::Local<v8::Object> exports,
                 void* priv) {
   gin_helper::Dictionary dict(context->GetIsolate(), exports);
   dict.SetMethod("showItemInFolder", &platform_util::ShowItemInFolder);
-  dict.SetMethod("openItem", &platform_util::OpenItem);
+  dict.SetMethod("openItem", &OpenItem);
   dict.SetMethod("openExternal", &OpenExternal);
   dict.SetMethod("moveItemToTrash", &MoveItemToTrash);
   dict.SetMethod("beep", &platform_util::Beep);
