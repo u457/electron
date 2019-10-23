@@ -11,7 +11,7 @@ Commit-Queue: Robert Sesek <rsesek@chromium.org>
 Cr-Commit-Position: refs/heads/master@{#703739}
 
 diff --git a/AUTHORS b/AUTHORS
-index 6714e69599bc87c47663bec740b91e352ef92780..41aa5584412e4a325d2360691b00c43d7b08f1bb 100644
+index b42bc6db0332e965d92c8284ccc96ea263523f54..41cf3fc0d0b34798182c84ee175982c2c63853e1 100644
 --- a/AUTHORS
 +++ b/AUTHORS
 @@ -223,6 +223,7 @@ Debashish Samantaray <d.samantaray@samsung.com>
